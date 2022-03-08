@@ -38,6 +38,11 @@ test_df = pd.read_csv('test-updated.csv', dtype={'combination': object}).iloc[:,
 test_df["path"] = test_dir + test_df["Video ID"]+ ".0" + test_df["Scene_ID"].astype(str) + ".mp4"
 
 
+#path to save extracted frames
+extracted_train_path = os.getcwd() + "/extracted_train_frame/"
+extracted_val_path = os.getcwd() + "/extracted_val_frame/"
+extracted_test_path = os.getcwd() + "/extracted_test_frame/"
+
 # Utilities to open video files using CV2
 def crop_center_square(frame):
     y, x = frame.shape[0:2]
@@ -46,7 +51,7 @@ def crop_center_square(frame):
     start_y = (y // 2) - (min_dim // 2)
     return frame[start_y:start_y+min_dim,start_x:start_x+min_dim]
 
-def load_video(path, max_frames=0, resize=(IMG_SIZE, IMG_SIZE)):
+def load_video(video_ID, path, max_frames=0, resize=(IMG_SIZE, IMG_SIZE)):
     count = 0
     cap = cv2.VideoCapture(path)
     frames = []
@@ -57,11 +62,14 @@ def load_video(path, max_frames=0, resize=(IMG_SIZE, IMG_SIZE)):
             if not ret:
                 break
 
-            if count % 5 == 0:
+            if count % 11 == 0:
                 frame = crop_center_square(frame)
                 frame = cv2.resize(frame, resize)
                 frame = frame[:, :, [2, 1, 0]]
                 frames.append(frame)
+                
+                #Save extracted frames to file
+                cv2.imwrite(extracted_test_path + video_ID + '/'+ count + '.jpg', frame)
 
             count=count+1
             
@@ -92,6 +100,7 @@ def prepare_all_videos(df, root_dir):
     feature_extractor = build_feature_extractor()
     num_samples = len(df)
     video_paths = df["path"].values.tolist()
+    video_ids = df["Video ID"].values.tolist()
 
     labels = []
     for x in df["combination"].values:
@@ -108,8 +117,11 @@ def prepare_all_videos(df, root_dir):
     # For each video.
     for idx, path in enumerate(video_paths):
         print(path)
+        print(idx)
+        video_id = video_ids[idx]
+        print(video_id)
         # Gather all its frames and add a batch dimension.
-        frames = load_video(path)
+        frames = load_video(video_id,path)
 
         # Pad shorter videos.
         if len(frames) < MAX_SEQ_LENGTH:
@@ -150,23 +162,23 @@ def main():
     print(f"Train labels: {train_labels}")
 
 
-    # Save to file
-    with open('train_data_4.npy', 'wb') as f:
+    # Save extracted data to file
+    with open('extracted_data/train_data.npy', 'wb') as f:
         np.save(f, train_data)
 
-    with open('train_labels_4.npy', 'wb') as f:
+    with open('extracted_data/train_labels.npy', 'wb') as f:
         np.save(f, train_labels)
 
-    with open('val_data_4.npy', 'wb') as f:
+    with open('extracted_data/val_data.npy', 'wb') as f:
         np.save(f, val_data)
 
-    with open('val_labels_4.npy', 'wb') as f:
+    with open('extracted_data/val_labels.npy', 'wb') as f:
         np.save(f, val_labels)
 
-    with open('test_data_4.npy', 'wb') as f:
+    with open('extracted_data/test_data.npy', 'wb') as f:
         np.save(f, test_data)
 
-    with open('test_labels_4.npy', 'wb') as f:
+    with open('extracted_data/test_labels.npy', 'wb') as f:
         np.save(f, test_labels)
 
 if __name__ == '__main__':
