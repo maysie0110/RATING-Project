@@ -2,6 +2,16 @@ train_data/
 test_data/
 val_data/
 logs/
+extracted_data/
+extracted_test_frames/
+extracted_train_frames/
+extracted_val_frames/
+extracted_data_60/
+extracted_test_60_frames/
+extracted_train_60_frames/
+extracted_val_60_frames/
+*.npy
+*.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -12,28 +12,23 @@ import imageio
 import cv2
 import os
 
-# global variables
+# # global variables
 
-train_dir = os.getcwd() + "/train_data/"
-val_dir = os.getcwd() + "/val_data/"
-test_dir = os.getcwd() + "/test_data/"
+# train_dir = os.getcwd() + "/train_data/"
+# val_dir = os.getcwd() + "/val_data/"
+# test_dir = os.getcwd() + "/test_data/"
 
 # Hyperparameters
-MAX_SEQ_LENGTH = 256
+MAX_SEQ_LENGTH = 128
+FRAME_GAP = 11
 NUM_FEATURES = 1024
 IMG_SIZE = 224
 
 EPOCHS = 10
-BATCH_SIZE = 64
 
-train_data, train_labels = np.load("train_data_4.npy"), np.load("train_labels_4.npy")
-val_data, val_labels = np.load("val_data_4.npy"), np.load("val_labels_4.npy")
-test_data, test_labels = np.load("test_data_4.npy"), np.load("test_labels_4.npy")
-
-
-# Create a dataframe which contains multiclass classification content annotations for each video scene used in the test set.
-test_df = pd.read_csv('test-updated.csv', dtype={'combination': object}).iloc[:,1:]
-test_df["path"] = test_dir + test_df["Video ID"]+ ".0" + test_df["Scene_ID"].astype(str) + ".mp4"
+train_data, train_labels = np.load("extracted_data/train_data.npy"), np.load("extracted_data/train_labels.npy")
+val_data, val_labels = np.load("extracted_data/val_data.npy"), np.load("extracted_data/val_labels.npy")
+test_data, test_labels = np.load("extracted_data/test_data.npy"), np.load("extracted_data/test_labels.npy")
 
 
 # Embedding Layer
@@ -56,6 +51,14 @@ class PositionalEmbedding(layers.Layer):
     def compute_mask(self, inputs, mask=None):
         mask = tf.reduce_any(tf.cast(inputs, "bool"), axis=-1)
         return mask
+    
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "sequence_length": self.sequence_length,
+            "output_dim": self.output_dim
+        })
+        return config
 
 
 # Subclassed layer
@@ -83,6 +86,64 @@ class TransformerEncoder(layers.Layer):
         proj_output = self.dense_proj(proj_input)
         return self.layernorm_2(proj_input + proj_output)
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "embed_dim": self.embed_dim,
+            "num_heads": self.num_heads,
+            "dense_dim": self.dense_dim,
+        })
+        return config
+
+
+# Utilities to open video files using CV2
+def crop_center_square(frame):
+    y, x = frame.shape[0:2]
+    min_dim = min(y, x)
+    start_x = (x // 2) - (min_dim // 2)
+    start_y = (y // 2) - (min_dim // 2)
+    return frame[start_y:start_y+min_dim,start_x:start_x+min_dim]
+
+def load_video(path, resize=(IMG_SIZE, IMG_SIZE)):
+    count = 0
+    cap = cv2.VideoCapture(path)
+    frames = []
+    try:
+        while True:
+            ret, frame = cap.read()
+            
+            if not ret:
+                break
+
+            if count % FRAME_GAP == 0:
+                frame = crop_center_square(frame)
+                frame = cv2.resize(frame, resize)
+                frame = frame[:, :, [2, 1, 0]]
+                frames.append(frame)
+
+            count=count+1
+            
+            if len(frames) == MAX_SEQ_LENGTH:
+                break
+    finally:
+        cap.release()
+    return np.array(frames)
+
+def build_feature_extractor():
+    feature_extractor = keras.applications.DenseNet121(
+        weights="imagenet",
+        include_top=False,
+        pooling="avg",
+        input_shape=(IMG_SIZE, IMG_SIZE, 3),
+    )
+    preprocess_input = keras.applications.densenet.preprocess_input
+
+    inputs = keras.Input((IMG_SIZE, IMG_SIZE, 3))
+    preprocessed = preprocess_input(inputs)
+
+    outputs = feature_extractor(preprocessed)
+    return keras.Model(inputs, outputs, name="feature_extractor")
+
 def recall_m(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
@@ -107,28 +168,37 @@ def get_compiled_model():
     num_heads = 1
     classes = 4
 
-    inputs = keras.Input(shape=(None, None))
+    inputs = keras.Input(shape=(None, None), name="input")
     x = PositionalEmbedding(
         sequence_length, embed_dim, name="frame_position_embedding"
     )(inputs)
     x = TransformerEncoder(embed_dim, dense_dim, num_heads, name="transformer_layer")(x)
+
+    x = layers.Dense(units=embed_dim, activation='gelu')(x)
+    x = layers.LayerNormalization()(x)
+
+
     x = layers.GlobalMaxPooling1D()(x)
     x = layers.Dropout(0.5)(x)
     outputs = layers.Dense(classes, activation="sigmoid")(x)
     model = keras.Model(inputs, outputs)
 
-    # compile the model
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy',f1_m,precision_m, recall_m])
 
+    optimizer = keras.optimizers.Adam(learning_rate=1e-4)
+    # compile the model
+    model.compile(
+        optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy',f1_m,precision_m, recall_m]
+    )
+    
     model.summary()
     return model
 
 
 def run_experiment():
-    # log_dir = "logs/fit/tmp_3_3" 
-    # tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+    log_dir = "logs/fit/tmp_3_4" 
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
-    filepath = os.getcwd() + "/tmp_4/video_classifier"
+    filepath = os.getcwd() + "/tmp_3_4/video_classifier"
     checkpoint = keras.callbacks.ModelCheckpoint(
         filepath, save_weights_only=True, save_best_only=True, verbose=1
     )
@@ -140,7 +210,7 @@ def run_experiment():
             train_labels,
             validation_data=(val_data,val_labels),
             epochs=EPOCHS,
-            callbacks=[checkpoint],
+            callbacks=[checkpoint, tensorboard_callback],
         )
 
     model.load_weights(filepath)
@@ -148,9 +218,9 @@ def run_experiment():
     # evaluate the model
     loss, accuracy, f1_score, precision, recall = model.evaluate(test_data, test_labels, verbose=0)
     print(f"Test accuracy: {round(accuracy * 100, 2)}%")
-    print(f"F1 score: {round(f1_score * 100, 2)}%")
-    print(f"Precision: {round(precision * 100, 2)}%")
-    print(f"Recall: {round(recall * 100, 2)}%")
+    print(f"F1 score: {round(f1_score, 2)}")
+    print(f"Precision: {round(precision, 2)}")
+    print(f"Recall: {round(recall, 2)}")
 
     return model
 
@@ -178,53 +248,6 @@ def prepare_single_video(frames):
 
     return frame_features
 
-# Utilities to open video files using CV2
-def crop_center_square(frame):
-    y, x = frame.shape[0:2]
-    min_dim = min(y, x)
-    start_x = (x // 2) - (min_dim // 2)
-    start_y = (y // 2) - (min_dim // 2)
-    return frame[start_y:start_y+min_dim,start_x:start_x+min_dim]
-
-def load_video(path, max_frames=0, resize=(IMG_SIZE, IMG_SIZE)):
-    count = 0
-    cap = cv2.VideoCapture(path)
-    frames = []
-    try:
-        while True:
-            ret, frame = cap.read()
-            
-            if not ret:
-                break
-
-            if count % 5 == 0:
-                frame = crop_center_square(frame)
-                frame = cv2.resize(frame, resize)
-                frame = frame[:, :, [2, 1, 0]]
-                frames.append(frame)
-
-            count=count+1
-            
-            if len(frames) == max_frames:
-                break
-    finally:
-        cap.release()
-    return np.array(frames)
-
-def build_feature_extractor():
-    feature_extractor = keras.applications.DenseNet121(
-        weights="imagenet",
-        include_top=False,
-        pooling="avg",
-        input_shape=(IMG_SIZE, IMG_SIZE, 3),
-    )
-    preprocess_input = keras.applications.densenet.preprocess_input
-
-    inputs = keras.Input((IMG_SIZE, IMG_SIZE, 3))
-    preprocessed = preprocess_input(inputs)
-
-    outputs = feature_extractor(preprocessed)
-    return keras.Model(inputs, outputs, name="feature_extractor")
 
 def main():
     trained_model = run_experiment()
@@ -246,6 +269,9 @@ def main():
     # print("Precision", precision)
     # f1 = f1_score(y_true=test_labels, y_pred=predict, average='weighted')
     # print("F1 score", f1)
+
+
+
 
 if __name__ == '__main__':
     main()
