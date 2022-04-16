@@ -1,50 +1,9 @@
-import os
-from keras.applications.vgg19 import VGG19
-from keras.preprocessing import image
-from keras.applications.vgg19 import preprocess_input
-from keras.models import Model
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.svm import LinearSVC
-from sklearn.metrics import accuracy_score
+import tensorflow as tf
+from tensorflow.keras import layers
+from tensorflow.keras import backend as K
+from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
+from tensorflow.keras.utils import plot_model
 from utilities import f1_m, recall_m, precision_m
-
-# Hyperparameters
-IMG_SIZE = 224
-EPOCHS = 10
-BATCH_SIZE = 32
-
-train_data, train_labels = np.load("extracted_audio_data/train_data.npy"), np.load("extracted_data/train_labels.npy")
-val_data, val_labels = np.load("extracted_audio_data/val_data.npy"), np.load("extracted_data/val_labels.npy")
-test_data, test_labels = np.load("extracted_audio_data/test_data.npy"), np.load("extracted_data/test_labels.npy")
-
-
-def get_features(img_path):
-    img = image.load_img(img_path, target_size=(224, 224))
-    x = image.img_to_array(img)
-    x = np.expand_dims(x, axis=0)
-    x = preprocess_input(x)
-    flatten = model.predict(x)
-    return list(flatten[0])
-
-
-# def recall_m(y_true, y_pred):
-#     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-#     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-#     recall = true_positives / (possible_positives + K.epsilon())
-#     return recall
-
-# def precision_m(y_true, y_pred):
-#     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-#     predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-#     precision = true_positives / (predicted_positives + K.epsilon())
-#     return precision
-
-# def f1_m(y_true, y_pred):
-#     precision = precision_m(y_true, y_pred)
-#     recall = recall_m(y_true, y_pred)
-#     return 2*((precision*recall)/(precision+recall+K.epsilon()))
-
 
 def get_cnn_model():
     classes = 4
@@ -71,18 +30,47 @@ def get_cnn_model():
     model.summary()
     return model
 
+def get_late_fusion_model(model_1,model_2):
+    classes = 4
+    x1 = model_1.output
+    x2 = model_2.output
+    
+    # LATE FUSION
+    x = concatenate([x1, x2])
+    x = Sequential()(x)
+    # x = Dense(x.shape[1], activation='relu')(x) #12
+    # x = Dropout(DROPOUT_PROB)(x)
+    # x = Dense(ceil(x.shape[1]/2), activation='relu')(x) #8
+    # x = Dropout(DROPOUT_PROB)(x)
+    # predictions = Dense(classes, activation='softmax')(x)
+
+    x = layers.GlobalMaxPooling1D()(x)
+    x = layers.Dropout(0.5)(x)
+    outputs = layers.Dense(classes, activation="sigmoid")(x)
+
+    model = keras.Model(inputs=[model_1.input, model_2.input], outputs=outputs) # Inputs go into two different layers
+
+    optimizer = keras.optimizers.Adam(learning_rate=1e-4)
+    # compile the model
+    model.compile(
+        optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy',f1_m,precision_m, recall_m]
+    )
+    
+    model.summary()
+    return model
+
 
 def run_experiment():
-    log_dir = "logs/fit/temp" 
+    log_dir = "logs/fit/fusion_temp" 
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
-    filepath = os.getcwd() + "/temp/audio_classifier"
+    filepath = os.getcwd() + "/fusion_temp/classifier"
     checkpoint = keras.callbacks.ModelCheckpoint(
         filepath, save_weights_only=True, save_best_only=True, verbose=1
     )
 
     with tf.device('/device:CPU:0'):
-        model = get_cnn_model()
+        model = get_compiled_model()
         history = model.fit(
             train_data,
             train_labels,
@@ -103,8 +91,18 @@ def run_experiment():
     return model
 
 def main():
-   trained_model = run_experiment()
+    print("Late fusion Transformer-CNN")
 
+    filepath = os.getcwd() + "/temp/audio_classifier"
+    cnn = get_cnn_model()
+    cnn.load_weights(filepath)
+
+
+    filepath = os.getcwd() + "/tmp_3_4/video_classifier"
+    transformer = get_transformer_model()
+    model.load_weights(filepath)
+
+    model = get_late_fusion_model(cnn, transformer)
 
 if __name__ == '__main__':
     main()
