@@ -37,7 +37,8 @@ def prepare_all_audios(df, save_dir):
         video_id = video_ids[idx]
         scene_id = scene_ids[idx]
 
-        audio_dir = save_dir + str(video_id) + '.' + str(scene_id) + '/'
+        # audio_dir = save_dir + str(video_id) + '.' + str(scene_id) + '/'
+        audio_dir = save_dir + str(video_id) + '.' + str(scene_id) + '.wav'
         print(audio_dir)
 
         clip = mp.VideoFileClip(path)

@@ -8,13 +8,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
 from sklearn.metrics import accuracy_score
 
-base_model = VGG19(weights='imagenet')
-model = Model(inputs=base_model.input, outputs=base_model.get_layer('flatten').output)
+# Hyperparameters
+IMG_SIZE = 224
+EPOCHS = 10
+BATCH_SIZE = 32
 
-# train_data, train_labels = np.load("extracted_data/train_data.npy"), np.load("extracted_data/train_labels.npy")
-# val_data, val_labels = np.load("extracted_data/val_data.npy"), np.load("extracted_data/val_labels.npy")
-# test_data, test_labels = np.load("extracted_data/test_data.npy"), np.load("extracted_data/test_labels.npy")
-
+train_data, train_labels = np.load("extracted_audio_data/train_data.npy"), np.load("extracted_data/train_labels.npy")
+val_data, val_labels = np.load("extracted_audio_data/val_data.npy"), np.load("extracted_data/val_labels.npy")
+test_data, test_labels = np.load("extracted_audio_data/test_data.npy"), np.load("extracted_data/test_labels.npy")
 
 
 def get_features(img_path):
@@ -26,36 +27,83 @@ def get_features(img_path):
     return list(flatten[0])
 
 
+def recall_m(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    recall = true_positives / (possible_positives + K.epsilon())
+    return recall
+
+def precision_m(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+    precision = true_positives / (predicted_positives + K.epsilon())
+    return precision
+
+def f1_m(y_true, y_pred):
+    precision = precision_m(y_true, y_pred)
+    recall = recall_m(y_true, y_pred)
+    return 2*((precision*recall)/(precision+recall+K.epsilon()))
+
+
+def get_cnn_model():
+    classes = 4
+
+    # Create a VGG19 model, and removing the last layer that is classifying 1000 images. 
+    # # This will be replaced with images classes we have. 
+    base_model = VGG19(weights='imagenet', include_top=False)
+    # freeze all layers in the the base model
+    base_model.trainable = False
+
+    # Model = Model(inputs=base_model.input, outputs=base_model.get_layer('flatten').output)
+
+    x = Flatten()(base_model.output) #Output obtained on vgg16 is now flattened. 
+    outputs = layers.Dense(classes, activation="sigmoid")(x)
+
+    #Creating model object 
+    model = keras.Model(inputs=base_model.input, outputs=outputs)
+
+    optimizer = keras.optimizers.Adam(learning_rate=1e-4)
+    # compile the model
+    model.compile(
+        optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy',f1_m,precision_m, recall_m]
+    )
+    model.summary()
+    return model
+
+
+def run_experiment():
+    log_dir = "logs/fit/temp" 
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+
+    filepath = os.getcwd() + "/temp/audio_classifier"
+    checkpoint = keras.callbacks.ModelCheckpoint(
+        filepath, save_weights_only=True, save_best_only=True, verbose=1
+    )
+
+    with tf.device('/device:CPU:0'):
+        model = get_cnn_model()
+        history = model.fit(
+            train_data,
+            train_labels,
+            validation_data=(val_data,val_labels),
+            epochs=EPOCHS,
+            callbacks=[checkpoint, tensorboard_callback],
+        )
+
+    model.load_weights(filepath)
+    # _, accuracy = model.evaluate(test_data, test_labels)
+    # evaluate the model
+    loss, accuracy, f1_score, precision, recall = model.evaluate(test_data, test_labels, verbose=0)
+    print(f"Test accuracy: {round(accuracy * 100, 2)}%")
+    print(f"F1 score: {round(f1_score, 2)}")
+    print(f"Precision: {round(precision, 2)}")
+    print(f"Recall: {round(recall, 2)}")
+
+    return model
+
 def main():
-    X = []
-    y = []
+   trained_model = run_experiment()
 
-    car_plots = []
-    for (_,_,filenames) in os.walk('carPlots'):
-        car_plots.extend(filenames)
-        break
-
-    for cplot in car_plots:
-        X.append(get_features('carPlots/' + cplot))
-        y.append(0)
-    bike_plots = []
-    for (_,_,filenames) in os.walk('bikePlots'):
-        bike_plots.extend(filenames)
-        break
-
-    for cplot in bike_plots:
-        X.append(get_features('bikePlots/' + cplot))
-        y.append(1)
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=42, stratify=y)
-
-    clf = LinearSVC(random_state=0, tol=1e-5)
-    clf.fit(X_train, y_train)
-
-    predicted = clf.predict(X_test)
-
-    # get the accuracy
-    print (accuracy_score(y_test, predicted))
 
 if __name__ == '__main__':
     main()

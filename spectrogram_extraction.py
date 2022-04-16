@@ -4,19 +4,33 @@ import matplotlib.pyplot as plt
 from scipy.fftpack import fft # fourier transform
 from scipy import signal
 
-# global variables
+import librosa.display
+import pylab
+import librosa    
+import glob
 
+
+# global variables
 train_dir = os.getcwd() + "/train_data/"
 val_dir = os.getcwd() + "/val_data/"
 test_dir = os.getcwd() + "/test_data/"
 
-#path to save extracted audio
-extracted_train_path = os.getcwd() + "/extracted_train_audio/"
-extracted_val_path = os.getcwd() + "/extracted_val_audio/"
-extracted_test_path = os.getcwd() + "/extracted_test_audio/"
-os.mkdir(extracted_train_path)
-os.mkdir(extracted_val_path)
-os.mkdir(extracted_test_path)
+train_audio_dir = os.getcwd() + "/extracted_train_audio/"
+val_audio_dir = os.getcwd() + "/extracted_val_audio/"
+test_audio_dir = os.getcwd() + "/extracted_test_audio/"
+
+# #path to save extracted audio
+# extracted_train_path = os.getcwd() + "/extracted_train_spectrogram/"
+# extracted_val_path = os.getcwd() + "/extracted_val_spectrogram/"
+# extracted_test_path = os.getcwd() + "/extracted_test_spectrogram/"
+# os.mkdir(extracted_train_path)
+# os.mkdir(extracted_val_path)
+# os.mkdir(extracted_test_path)
+
+
+#directory to save extracted data
+extracted_data_dir = os.getcwd() + "/extracted_audio_data/"
+os.mkdir(extracted_data_dir)
 
 # Create a dataframe which contains multiclass classification content annotations for each video scene used in the training set.
 train_df = pd.read_csv('train-updated.csv', dtype={'combination': object}).iloc[:,1:]
@@ -32,8 +46,11 @@ test_df["path"] = test_dir + test_df["Video ID"]+ ".0" + test_df["Scene_ID"].ast
 
 
 def extract_spectrogram(audio_name):
+    # AudioName = "vignesh.wav" # Audio File
+    # fs, Audiodata = wavfile.read(AudioName)
+
     AudioName = "vignesh.wav" # Audio File
-    fs, Audiodata = wavfile.read(AudioName)
+    fs, Audiodata = wavfile.read(audio_name)
 
     # Plot the audio signal in time
     plt.plot(Audiodata)
@@ -70,30 +87,53 @@ def extract_spectrogram(audio_name):
 
     plt.show()
 
-def prepare_all_spectrograms(df, save_dir):
+def extract_mel_spectrograms(audio_dir):
+    # Load the audio as a waveform 'data'
+    # Store the sampling rate
+    audio_data, samplerate = librosa.load(audio_dir)
+
+    #Compute a mel-scaled spectrogram
+    mel_feat = librosa.feature.melspectrogram(y=audio_data)
+    power = librosa.power_to_db(mel_feat,ref=np.max)
+    return power
+
+
+def prepare_all_spectrograms(df, audio_root_dir):
     video_paths = df["path"].values.tolist()
     video_ids = df["Video ID"].values.tolist()
     scene_ids = df["Scene_ID"].values.tolist()
 
+    audio_features = []
     # For each video.
     for idx, path in enumerate(video_paths):
         print(path)
         video_id = video_ids[idx]
         scene_id = scene_ids[idx]
 
-        audio_dir = save_dir + str(video_id) + '.' + str(scene_id) + '/'
+        audio_dir = audio_root_dir + str(video_id) + '.' + str(scene_id) + '.wav'
         print(audio_dir)
 
-        clip = mp.VideoFileClip(path)
-        clip.audio.write_audiofile(audio_dir)
+        mel = extract_mel_spectrograms(audio_dir)
+
+        audio_features.append(mel)
+    
+    return audio_features
+
 
 def main():
-    # my_clip = mp.VideoFileClip(r"videotest.mov")
-    # my_clip.audio.write_audiofile(r"my_result.wav")
+    train_audio_data = prepare_all_spectrograms(train_df, train_audio_dir)
+    val_audio_data = prepare_all_spectrograms(val_df, val_audio_dir)
+    test_audio_data = prepare_all_spectrograms(test_df, test_audio_dir)
 
-    prepare_all_spectrograms(train_df, extracted_train_path)
-    prepare_all_spectrograms(val_df, extracted_val_path)
-    prepare_all_spectrograms(test_df, extracted_test_path)
+     # Save extracted data to file
+    with open(extracted_data_dir + 'train_data.npy', 'wb') as f:
+        np.save(f, train_audio_data)
+
+    with open(extracted_data_dir + 'val_data.npy', 'wb') as f:
+        np.save(f, val_audio_data)
+
+    with open(extracted_data_dir + 'test_data.npy', 'wb') as f:
+        np.save(f, test_audio_data)
 
 if __name__ == '__main__':
     main()
