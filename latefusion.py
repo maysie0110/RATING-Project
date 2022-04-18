@@ -5,6 +5,13 @@ from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, Early
 from tensorflow.keras.utils import plot_model
 from utilities import f1_m, recall_m, precision_m
 
+from tensorflow.keras.applications.vgg19 import VGG19
+from tensorflow.keras.applications.vgg19 import preprocess_input
+from tensorflow.keras.models import Model
+from tensorflow import keras
+import numpy as np
+import os 
+
 def get_cnn_model():
     classes = 4
 
@@ -16,7 +23,7 @@ def get_cnn_model():
 
     # Model = Model(inputs=base_model.input, outputs=base_model.get_layer('flatten').output)
 
-    x = Flatten()(base_model.output) #Output obtained on vgg16 is now flattened. 
+    x = layers.Flatten()(base_model.output) #Output obtained on vgg16 is now flattened. 
     outputs = layers.Dense(classes, activation="sigmoid")(x)
 
     #Creating model object 
@@ -36,8 +43,8 @@ def get_late_fusion_model(model_1,model_2):
     x2 = model_2.output
     
     # LATE FUSION
-    x = concatenate([x1, x2])
-    x = Sequential()(x)
+    x = layers.concatenate([x1, x2])
+    x = keras.Sequential()(x)
     # x = Dense(x.shape[1], activation='relu')(x) #12
     # x = Dropout(DROPOUT_PROB)(x)
     # x = Dense(ceil(x.shape[1]/2), activation='relu')(x) #8
@@ -70,7 +77,7 @@ def run_experiment():
     )
 
     with tf.device('/device:CPU:0'):
-        model = get_compiled_model()
+        model = get_late_fusion_model()
         history = model.fit(
             train_data,
             train_labels,
