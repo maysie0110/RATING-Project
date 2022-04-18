@@ -1,4 +1,7 @@
-import moviepy.editor as mp
+# import moviepy.editor as mp
+import os
+import pandas as pd
+import subprocess
 
 # global variables
 
@@ -38,15 +41,24 @@ def prepare_all_audios(df, save_dir):
         scene_id = scene_ids[idx]
 
         # audio_dir = save_dir + str(video_id) + '.' + str(scene_id) + '/'
-        audio_dir = save_dir + str(video_id) + '.' + str(scene_id) + '.wav'
+        audio_dir = save_dir + str(video_id) + '.0' + str(scene_id) + '.wav'
         print(audio_dir)
 
-        clip = mp.VideoFileClip(path)
-        clip.audio.write_audiofile(audio_dir)
+        # clip = mp.VideoFileClip(path)
+        # clip.audio.write_audiofile(audio_dir)
+
+        subprocess.call(["ffmpeg", "-y", "-i", path, audio_dir], 
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.STDOUT)
 
 def main():
-    # my_clip = mp.VideoFileClip(r"videotest.mov")
-    # my_clip.audio.write_audiofile(r"my_result.wav")
+    # my_clip = mp.VideoFileClip("tt2872718.00.mp4")
+    # print(my_clip.size)
+    # my_clip.audio.write_audiofile(f"my_result.wav")
+
+    # subprocess.call(["ffmpeg", "-y", "-i", "tt2872718.00.mp4", f"my_result.wav"], 
+    #             stdout=subprocess.DEVNULL,
+    #             stderr=subprocess.STDOUT)
 
     prepare_all_audios(train_df, extracted_train_path)
     prepare_all_audios(val_df, extracted_val_path)

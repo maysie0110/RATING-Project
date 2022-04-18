@@ -12,6 +12,12 @@ extracted_train_60_frames/
 extracted_val_60_frames/
 *.npy
 *.zip
+extracted_train_audio/
+extracted_val_audio/
+extracted_test_audio/
+extracted_train_spectrogram/
+extracted_val_spectrogram/
+extracted_test_spectrogram/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,49 +1,51 @@
 import os
-from keras.applications.vgg19 import VGG19
-from keras.preprocessing import image
-from keras.applications.vgg19 import preprocess_input
-from keras.models import Model
+from tensorflow.keras.applications.vgg19 import VGG19
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.applications.vgg19 import preprocess_input
+from tensorflow.keras.models import Model
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.svm import LinearSVC
-from sklearn.metrics import accuracy_score
-from utilities import f1_m, recall_m, precision_m
+
+# from utilities import f1_m, recall_m, precision_m
+from tensorflow.keras import backend as K
+
+from tensorflow.keras import layers
+from tensorflow import keras
+import tensorflow as tf
 
 # Hyperparameters
 IMG_SIZE = 224
 EPOCHS = 10
 BATCH_SIZE = 32
 
-train_data, train_labels = np.load("extracted_audio_data/train_data.npy"), np.load("extracted_data/train_labels.npy")
-val_data, val_labels = np.load("extracted_audio_data/val_data.npy"), np.load("extracted_data/val_labels.npy")
-test_data, test_labels = np.load("extracted_audio_data/test_data.npy"), np.load("extracted_data/test_labels.npy")
+train_data, train_labels = np.load("extracted_audio_data/train_data.npy", allow_pickle=True), np.load("extracted_data/train_labels.npy")
+val_data, val_labels = np.load("extracted_audio_data/val_data.npy", allow_pickle=True), np.load("extracted_data/val_labels.npy")
+test_data, test_labels = np.load("extracted_audio_data/test_data.npy", allow_pickle=True), np.load("extracted_data/test_labels.npy")
+
+# def get_features(img_path):
+#     img = image.load_img(img_path, target_size=(224, 224))
+#     x = image.img_to_array(img)
+#     x = np.expand_dims(x, axis=0)
+#     x = preprocess_input(x)
+#     flatten = model.predict(x)
+#     return list(flatten[0])
 
 
-def get_features(img_path):
-    img = image.load_img(img_path, target_size=(224, 224))
-    x = image.img_to_array(img)
-    x = np.expand_dims(x, axis=0)
-    x = preprocess_input(x)
-    flatten = model.predict(x)
-    return list(flatten[0])
+def recall_m(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    recall = true_positives / (possible_positives + K.epsilon())
+    return recall
 
+def precision_m(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+    precision = true_positives / (predicted_positives + K.epsilon())
+    return precision
 
-# def recall_m(y_true, y_pred):
-#     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-#     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-#     recall = true_positives / (possible_positives + K.epsilon())
-#     return recall
-
-# def precision_m(y_true, y_pred):
-#     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-#     predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-#     precision = true_positives / (predicted_positives + K.epsilon())
-#     return precision
-
-# def f1_m(y_true, y_pred):
-#     precision = precision_m(y_true, y_pred)
-#     recall = recall_m(y_true, y_pred)
-#     return 2*((precision*recall)/(precision+recall+K.epsilon()))
+def f1_m(y_true, y_pred):
+    precision = precision_m(y_true, y_pred)
+    recall = recall_m(y_true, y_pred)
+    return 2*((precision*recall)/(precision+recall+K.epsilon()))
 
 
 def get_cnn_model():
@@ -51,13 +53,13 @@ def get_cnn_model():
 
     # Create a VGG19 model, and removing the last layer that is classifying 1000 images. 
     # # This will be replaced with images classes we have. 
-    base_model = VGG19(weights='imagenet', include_top=False)
+    base_model = VGG19(weights='imagenet', include_top=False, input_shape=(IMG_SIZE,IMG_SIZE,3))
     # freeze all layers in the the base model
     base_model.trainable = False
 
     # Model = Model(inputs=base_model.input, outputs=base_model.get_layer('flatten').output)
 
-    x = Flatten()(base_model.output) #Output obtained on vgg16 is now flattened. 
+    x = layers.Flatten()(base_model.output) #Output obtained on vgg16 is now flattened. 
     outputs = layers.Dense(classes, activation="sigmoid")(x)
 
     #Creating model object 
