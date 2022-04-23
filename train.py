@@ -12,11 +12,6 @@ import imageio
 import cv2
 import os
 
-# # global variables
-
-# train_dir = os.getcwd() + "/train_data/"
-# val_dir = os.getcwd() + "/val_data/"
-# test_dir = os.getcwd() + "/test_data/"
 
 # Hyperparameters
 MAX_SEQ_LENGTH = 128
@@ -24,7 +19,7 @@ FRAME_GAP = 11
 NUM_FEATURES = 1024
 IMG_SIZE = 224
 
-EPOCHS = 10
+EPOCHS = 20
 
 train_data, train_labels = np.load("extracted_data/train_data.npy"), np.load("extracted_data/train_labels.npy")
 val_data, val_labels = np.load("extracted_data/val_data.npy"), np.load("extracted_data/val_labels.npy")
@@ -195,12 +190,16 @@ def get_compiled_model():
 
 
 def run_experiment():
-    log_dir = "logs/fit/tmp_3_4" 
+    log_dir = "logs/fit/video_chkpt" 
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
-    filepath = os.getcwd() + "/tmp_3_4/video_classifier"
+    filepath = os.getcwd() + "/video_chkpt/video_classifier"
     checkpoint = keras.callbacks.ModelCheckpoint(
-        filepath, save_weights_only=True, save_best_only=True, verbose=1
+        filepath, save_weights_only=True,
+        monitor='val_f1_m',
+        mode='max',
+        save_best_only=True,
+        verbose = 1
     )
 
     with tf.device('/device:CPU:0'):

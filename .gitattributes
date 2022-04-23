@@ -1,3 +1,8 @@
 *.npy filter=lfs diff=lfs merge=lfs -text
 tmp/video_classifier.data-00000-of-00001 filter=lfs diff=lfs merge=lfs -text
+temp/** filter=lfs diff=lfs merge=lfs -text
 fusion_temp/** filter=lfs diff=lfs merge=lfs -text
+early_fusion_temp/** filter=lfs diff=lfs merge=lfs -text
+early_fusion_chkpt/** filter=lfs diff=lfs merge=lfs -text
+video_chkpt/** filter=lfs diff=lfs merge=lfs -text
+audio_chkpt/** filter=lfs diff=lfs merge=lfs -text
