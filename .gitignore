@@ -20,6 +20,8 @@ extracted_val_spectrogram/
 extracted_test_spectrogram/
 temp/
 early_fusion_temp/
+early_fusion_temp_2/
+audio_temp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
