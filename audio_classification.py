@@ -100,13 +100,11 @@ def get_cnn_model():
     # #Creating model object 
     # model = keras.Model(inputs=base_model.input, outputs=outputs)
 
-    # optimizer = keras.optimizers.Adam(learning_rate=1e-4)
-    # # compile the model
-    # model.compile(
-    #     optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy',f1_m,precision_m, recall_m]
-    # )
-    # model.summary()
-    # return model
+    #audio_temp/
+    model_pretrained = VGG19(include_top=True, input_shape=(IMG_SIZE, IMG_SIZE, 3))#, weights="imagenet")
+    x = layers.Dense(4096, activation='relu', name='predictions1', dtype='float32')(model_pretrained.layers[-2].output)
+    output = layers.Dense(4, activation='sigmoid', name='predictions', dtype='float32')(x)
+    model = Model(model_pretrained.input, output)
 
     # model = keras.Sequential()
     # model.add(layers.Conv2D(input_shape=(IMG_SIZE,IMG_SIZE,3),filters=64,kernel_size=(3,3),padding="same", activation="relu"))
@@ -134,23 +132,23 @@ def get_cnn_model():
 
 
 
-    model = keras.Sequential()
-    model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu', input_shape=(IMG_SIZE,IMG_SIZE,3)))
-    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-    model.add(layers.MaxPooling2D(pool_size=(2, 2)))
-    model.add(layers.Dropout(0.25))
-    model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
-    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-    model.add(layers.MaxPooling2D(pool_size=(2, 2)))
-    model.add(layers.Dropout(0.5))
-    model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
-    model.add(layers.Conv2D(128, (3, 3), activation='relu'))
-    model.add(layers.MaxPooling2D(pool_size=(2, 2)))
-    model.add(layers.Dropout(0.5))
-    model.add(layers.Flatten())
-    model.add(layers.Dense(512, activation='relu'))
-    model.add(layers.Dropout(0.5))
-    model.add(layers.Dense(4, activation='sigmoid'))
+    # model = keras.Sequential()
+    # model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu', input_shape=(IMG_SIZE,IMG_SIZE,3)))
+    # model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    # model.add(layers.MaxPooling2D(pool_size=(2, 2)))
+    # model.add(layers.Dropout(0.25))
+    # model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+    # model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    # model.add(layers.MaxPooling2D(pool_size=(2, 2)))
+    # model.add(layers.Dropout(0.5))
+    # model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
+    # model.add(layers.Conv2D(128, (3, 3), activation='relu'))
+    # model.add(layers.MaxPooling2D(pool_size=(2, 2)))
+    # model.add(layers.Dropout(0.5))
+    # model.add(layers.Flatten())
+    # model.add(layers.Dense(512, activation='relu'))
+    # model.add(layers.Dropout(0.5))
+    # model.add(layers.Dense(4, activation='sigmoid'))
 
     # optimizer = keras.optimizers.Adam(learning_rate=1e-4)
     # optimizer = keras.optimizers.SGD(learning_rate=10.0 ** (-1), decay=1e-5)
@@ -167,10 +165,10 @@ def get_cnn_model():
 
 
 def run_experiment(train_data,val_data,test_data):
-    log_dir = "logs/fit/audio_chkpt" 
+    log_dir = "logs/fit/audio_temp" 
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
-    filepath = os.getcwd() + "/audio_chkpt/audio_classifier"
+    filepath = os.getcwd() + "/audio_temp/audio_classifier"
     checkpoint = keras.callbacks.ModelCheckpoint(
         filepath, save_weights_only=True,
         monitor='val_f1_m',

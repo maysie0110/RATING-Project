@@ -136,6 +136,12 @@ def get_early_fusion_model():
     x2 = layers.Dense(512, activation='relu')(x2)
     x2 = layers.Dropout(0.5)(x2)
 
+    # #audio_temp/
+    # model_pretrained = VGG19(include_top=True)#, weights="imagenet")
+    # x2 = model_pretrained(inputs_spec)
+    # x2 = layers.Dense(4096, activation='relu', name='predictions1', dtype='float32')(x2)
+
+
     # EARLY FUSION
     x = layers.concatenate([x1, x2])
     # x = keras.Sequential()(x)

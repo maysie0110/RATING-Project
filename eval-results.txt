@@ -1,3 +1,4 @@
+#########################################
 Transformer-based Model (tmp_3_4):
 Test accuracy: 63.55%
 F1 score: 0.51
@@ -10,6 +11,7 @@ F1 score: 0.57
 Precision: 0.56
 Recall: 0.59
 
+#########################################
 CNN model (temp)
 Test accuracy: 51.4%
 F1 score: 0.2
@@ -22,6 +24,13 @@ F1 score: 0.33
 Precision: 0.24
 Recall: 0.57
 
+CNN model (audio_temp using vgg19):
+Test accuracy: 30.84%
+F1 score: 0.41
+Precision: 0.32
+Recall: 0.6
+
+#########################################
 Early fusion (early_fusion_temp):
 Test accuracy: 51.4%
 F1 score: 0.58
@@ -34,6 +43,13 @@ F1 score: 0.58
 Precision: 0.58
 Recall: 0.58
 
+Early fusion (early_fusion_temp_2 using vgg19):
+Test accuracy: 60.75%
+F1 score: 0.63
+Precision: 0.59
+Recall: 0.69
+
+#########################################
 Late fusion (tmp_3_4 + temp, threshold=0.5):
 Test accuracy: 32.87%
 F1 score: 0.46
@@ -45,3 +61,9 @@ Test accuracy: 34.11%
 F1 score: 0.51
 Precision: 0.42
 Recall: 0.76
+
+Late fusion (video_chkpt + audio_temp, threshold =0.5)
+Test accuracy: 38.01%
+F1 score: 0.50
+Precision: 0.38
+Recall: 0.80
