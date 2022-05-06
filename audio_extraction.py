@@ -9,13 +9,15 @@ train_dir = os.getcwd() + "/train_data/"
 val_dir = os.getcwd() + "/val_data/"
 test_dir = os.getcwd() + "/test_data/"
 
+extracted_root_dir = os.getcwd() + "/audio_classification"
+# os.mkdir(extracted_root_dir)
 #path to save extracted audio
-extracted_train_path = os.getcwd() + "/extracted_train_audio/"
-extracted_val_path = os.getcwd() + "/extracted_val_audio/"
-extracted_test_path = os.getcwd() + "/extracted_test_audio/"
-os.mkdir(extracted_train_path)
-os.mkdir(extracted_val_path)
-os.mkdir(extracted_test_path)
+extracted_train_path = extracted_root_dir + "/extracted_train_audio/"
+extracted_val_path = extracted_root_dir + "/extracted_val_audio/"
+extracted_test_path = extracted_root_dir + "/extracted_test_audio/"
+# os.mkdir(extracted_train_path)
+# os.mkdir(extracted_val_path)
+# os.mkdir(extracted_test_path)
 
 # Create a dataframe which contains multiclass classification content annotations for each video scene used in the training set.
 train_df = pd.read_csv('train-updated.csv', dtype={'combination': object}).iloc[:,1:]

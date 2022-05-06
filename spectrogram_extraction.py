@@ -20,15 +20,14 @@ train_audio_dir = os.getcwd() + "/extracted_train_audio/"
 val_audio_dir = os.getcwd() + "/extracted_val_audio/"
 test_audio_dir = os.getcwd() + "/extracted_test_audio/"
 
-# #directory to save extracted data
-# extracted_data_dir = os.getcwd() + "/extracted_audio_data/"
-# os.mkdir(extracted_data_dir)
-
+#directory to save extracted data
+extracted_root_dir = os.getcwd() + "/audio_classification"
+# os.mkdir(extracted_root_dir)
 
 #path to save extracted audio spectrogram
-extracted_train_path = os.getcwd() + "/extracted_train_spectrogram/"
-extracted_val_path = os.getcwd() + "/extracted_val_spectrogram/"
-extracted_test_path = os.getcwd() + "/extracted_test_spectrogram/"
+extracted_train_path = extracted_root_dir + "/extracted_train_spectrogram/"
+extracted_val_path = extracted_root_dir + "/extracted_val_spectrogram/"
+extracted_test_path = extracted_root_dir + "/extracted_test_spectrogram/"
 # os.mkdir(extracted_train_path)
 # os.mkdir(extracted_val_path)
 # os.mkdir(extracted_test_path)
