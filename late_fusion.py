@@ -22,13 +22,13 @@ NUM_FEATURES = 1024
 
 
 
-train_image_data, train_labels = np.load("extracted_data/train_data.npy"), np.load("extracted_data/train_labels.npy")
-val_image_data, val_labels = np.load("extracted_data/val_data.npy"), np.load("extracted_data/val_labels.npy")
-test_image_data, test_labels = np.load("extracted_data/test_data.npy"), np.load("extracted_data/test_labels.npy")
+train_image_data, train_labels = np.load("seq_length_128/extracted_data/train_data.npy"), np.load("seq_length_128/extracted_data/train_labels.npy")
+val_image_data, val_labels = np.load("seq_length_128/extracted_data/val_data.npy"), np.load("seq_length_128/extracted_data/val_labels.npy")
+test_image_data, test_labels = np.load("seq_length_128/extracted_data/test_data.npy"), np.load("seq_length_128/extracted_data/test_labels.npy")
 
-train_spectrograms = glob.glob('extracted_train_spectrogram/*')
-val_spectrograms = glob.glob('extracted_val_spectrogram/*')
-test_spectrograms = glob.glob('extracted_test_spectrogram/*')
+train_spectrograms = glob.glob('audio_classification/extracted_train_spectrogram/*')
+val_spectrograms = glob.glob('audio_classification/extracted_val_spectrogram/*')
+test_spectrograms = glob.glob('audio_classification/extracted_test_spectrogram/*')
 
 train_audio_data = []
 val_audio_data = []
@@ -127,26 +127,6 @@ def get_cnn_model():
     output = layers.Dense(4, activation='sigmoid', name='predictions', dtype='float32')(x)
     model = Model(model_pretrained.input, output)
 
-    # #Create CNN model
-    # model = keras.Sequential()
-    # model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu', input_shape=(IMG_SIZE,IMG_SIZE,3)))
-    # model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-    # model.add(layers.MaxPooling2D(pool_size=(2, 2)))
-    # model.add(layers.Dropout(0.25))
-    # model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
-    # model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-    # model.add(layers.MaxPooling2D(pool_size=(2, 2)))
-    # model.add(layers.Dropout(0.5))
-    # model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
-    # model.add(layers.Conv2D(128, (3, 3), activation='relu'))
-    # model.add(layers.MaxPooling2D(pool_size=(2, 2)))
-    # model.add(layers.Dropout(0.5))
-    # model.add(layers.Flatten())
-    # model.add(layers.Dense(512, activation='relu'))
-    # model.add(layers.Dropout(0.5))
-    # model.add(layers.Dense(4, activation='sigmoid'))
-
-
     # compile the model
     optimizer = keras.optimizers.SGD(learning_rate=0.0000001, decay=1e-6, momentum=0.9, nesterov=True)
     model.compile(
@@ -169,9 +149,8 @@ def get_transformer_model():
     )(inputs)
     x = TransformerEncoder(embed_dim, dense_dim, num_heads, name="transformer_layer")(x)
 
-    x = layers.Dense(units=embed_dim, activation='gelu')(x)
-    x = layers.LayerNormalization()(x)
-
+    # x = layers.Dense(units=embed_dim, activation='gelu')(x)
+    # x = layers.LayerNormalization()(x)
 
     x = layers.GlobalMaxPooling1D()(x)
     x = layers.Dropout(0.5)(x)
@@ -225,7 +204,8 @@ def Accuracy(y_true, y_pred):
 def main():
     print("Transformer-based Model")
     # filepath = os.getcwd() + "/tmp_3_4/video_classifier"
-    filepath = os.getcwd() + "/video_chkpt/video_classifier"
+    # filepath = os.getcwd() + "/video_chkpt/video_classifier"
+    filepath = os.getcwd() + "/seq_length_128/video_chkpt_128/video_classifier"
     transformer = get_transformer_model()
     transformer.load_weights(filepath)
 
@@ -240,7 +220,8 @@ def main():
     print("CNN Model")
     # filepath = os.getcwd() + "/temp/audio_classifier"
     # filepath = os.getcwd() + "/audio_chkpt/audio_classifier"
-    filepath = os.getcwd() + "/audio_temp/audio_classifier"
+    # filepath = os.getcwd() + "/audio_temp/audio_classifier"
+    filepath = os.getcwd() + "/audio_classification/audio_chkpt_sgd/audio_classifier"
     cnn = get_cnn_model()
     cnn.load_weights(filepath)
 

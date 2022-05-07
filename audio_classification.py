@@ -9,7 +9,6 @@ import numpy as np
 
 # from utilities import f1_m, recall_m, precision_m
 from tensorflow.keras import backend as K
-
 from tensorflow.keras import layers
 from tensorflow import keras
 import tensorflow as tf
@@ -19,13 +18,13 @@ IMG_SIZE = 224
 EPOCHS = 30
 BATCH_SIZE = 32
 
-train_spectrograms = glob.glob('extracted_train_spectrogram/*')
-val_spectrograms = glob.glob('extracted_val_spectrogram/*')
-test_spectrograms = glob.glob('extracted_test_spectrogram/*')
+train_spectrograms = glob.glob('audio_classification/extracted_train_spectrogram/*')
+val_spectrograms = glob.glob('audio_classification/extracted_val_spectrogram/*')
+test_spectrograms = glob.glob('audio_classification/extracted_test_spectrogram/*')
 
-train_labels = np.load("extracted_data/train_labels.npy")
-val_labels = np.load("extracted_data/val_labels.npy")
-test_labels = np.load("extracted_data/test_labels.npy")
+train_labels = np.load("audio_classification/train_labels.npy")
+val_labels = np.load("audio_classification/val_labels.npy")
+test_labels = np.load("audio_classification/test_labels.npy")
 
 # def get_features(img_path):
 #     img = image.load_img(img_path, target_size=(224, 224))
@@ -84,71 +83,12 @@ def f1_m(y_true, y_pred):
 
 
 def get_cnn_model():
-    # classes = 4
-
-    # # Create a VGG19 model, and removing the last layer that is classifying 1000 images. 
-    # # # This will be replaced with images classes we have. 
-    # base_model = VGG19(weights='imagenet', include_top=False, input_shape=(IMG_SIZE,IMG_SIZE,3))
-    # # freeze all layers in the the base model
-    # base_model.trainable = False
-
-    # # Model = Model(inputs=base_model.input, outputs=base_model.get_layer('flatten').output)
-
-    # x = layers.Flatten()(base_model.output) #Output obtained on vgg16 is now flattened. 
-    # outputs = layers.Dense(classes, activation="sigmoid")(x)
-
-    # #Creating model object 
-    # model = keras.Model(inputs=base_model.input, outputs=outputs)
-
     #audio_temp/
     model_pretrained = VGG19(include_top=True, input_shape=(IMG_SIZE, IMG_SIZE, 3))#, weights="imagenet")
     x = layers.Dense(4096, activation='relu', name='predictions1', dtype='float32')(model_pretrained.layers[-2].output)
     output = layers.Dense(4, activation='sigmoid', name='predictions', dtype='float32')(x)
     model = Model(model_pretrained.input, output)
 
-    # model = keras.Sequential()
-    # model.add(layers.Conv2D(input_shape=(IMG_SIZE,IMG_SIZE,3),filters=64,kernel_size=(3,3),padding="same", activation="relu"))
-    # model.add(layers.Conv2D(filters=64,kernel_size=(3,3),padding="same", activation="relu"))
-    # model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
-    # model.add(layers.Conv2D(filters=128, kernel_size=(3,3), padding="same", activation="relu"))
-    # model.add(layers.Conv2D(filters=128, kernel_size=(3,3), padding="same", activation="relu"))
-    # model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
-    # model.add(layers.Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
-    # model.add(layers.Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
-    # model.add(layers.Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
-    # model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
-    # model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-    # model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-    # model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-    # model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
-    # model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-    # model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-    # model.add(layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
-    # model.add(layers.MaxPool2D(pool_size=(2,2),strides=(2,2)))
-    # model.add(layers.Flatten())
-    # model.add(layers.Dense(units=4096,activation="relu"))
-    # model.add(layers.Dense(units=4096,activation="relu"))
-    # model.add(layers.Dense(units=4, activation='sigmoid'))
-
-
-
-    # model = keras.Sequential()
-    # model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu', input_shape=(IMG_SIZE,IMG_SIZE,3)))
-    # model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-    # model.add(layers.MaxPooling2D(pool_size=(2, 2)))
-    # model.add(layers.Dropout(0.25))
-    # model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
-    # model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-    # model.add(layers.MaxPooling2D(pool_size=(2, 2)))
-    # model.add(layers.Dropout(0.5))
-    # model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
-    # model.add(layers.Conv2D(128, (3, 3), activation='relu'))
-    # model.add(layers.MaxPooling2D(pool_size=(2, 2)))
-    # model.add(layers.Dropout(0.5))
-    # model.add(layers.Flatten())
-    # model.add(layers.Dense(512, activation='relu'))
-    # model.add(layers.Dropout(0.5))
-    # model.add(layers.Dense(4, activation='sigmoid'))
 
     # optimizer = keras.optimizers.Adam(learning_rate=1e-4)
     # optimizer = keras.optimizers.SGD(learning_rate=10.0 ** (-1), decay=1e-5)
@@ -165,10 +105,10 @@ def get_cnn_model():
 
 
 def run_experiment(train_data,val_data,test_data):
-    log_dir = "logs/fit/audio_temp" 
+    log_dir = "logs/fit/audio_chkpt_sgd" 
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
-    filepath = os.getcwd() + "/audio_temp/audio_classifier"
+    filepath = os.getcwd() + "/audio_classification/audio_chkpt_sgd/audio_classifier"
     checkpoint = keras.callbacks.ModelCheckpoint(
         filepath, save_weights_only=True,
         monitor='val_f1_m',
@@ -177,15 +117,15 @@ def run_experiment(train_data,val_data,test_data):
         verbose = True
     )
 
-    # with tf.device('/device:GPU:0'):
-    model = get_cnn_model()
-    history = model.fit(
-        train_data,
-        train_labels,
-        validation_data=(val_data,val_labels),
-        epochs=EPOCHS,
-        callbacks=[checkpoint, tensorboard_callback],
-    )
+    with tf.device('/device:GPU:0'):
+        model = get_cnn_model()
+        history = model.fit(
+            train_data,
+            train_labels,
+            validation_data=(val_data,val_labels),
+            epochs=EPOCHS,
+            callbacks=[checkpoint, tensorboard_callback],
+        )
 
     model.load_weights(filepath)
 
