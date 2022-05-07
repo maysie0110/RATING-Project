@@ -169,8 +169,8 @@ def get_compiled_model():
     )(inputs)
     x = TransformerEncoder(embed_dim, dense_dim, num_heads, name="transformer_layer")(x)
 
-    # x = layers.Dense(units=embed_dim, activation='gelu')(x)
-    # x = layers.LayerNormalization()(x)
+    x = layers.Dense(units=embed_dim, activation='gelu')(x)
+    x = layers.LayerNormalization()(x)
 
     x = layers.GlobalMaxPooling1D()(x)
     x = layers.Dropout(0.5)(x)
@@ -190,10 +190,10 @@ def get_compiled_model():
 
 
 def run_experiment():
-    log_dir = "logs/fit/video_chkpt_128_20" 
+    log_dir = "logs/fit/video_chkpt_128_3" 
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
-    filepath = os.getcwd() + "/seq_length_128/video_chkpt_128_20/video_classifier"
+    filepath = os.getcwd() + "/seq_length_128/video_chkpt_3/video_classifier"
     checkpoint = keras.callbacks.ModelCheckpoint(
         filepath, save_weights_only=True, 
         monitor='val_f1_m',

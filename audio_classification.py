@@ -105,10 +105,10 @@ def get_cnn_model():
 
 
 def run_experiment(train_data,val_data,test_data):
-    log_dir = "logs/fit/audio_chkpt_sgd" 
+    log_dir = "logs/fit/audio_chkpt_sgd_2" 
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
-    filepath = os.getcwd() + "/audio_classification/audio_chkpt_sgd/audio_classifier"
+    filepath = os.getcwd() + "/audio_classification/audio_chkpt_sgd_2/audio_classifier"
     checkpoint = keras.callbacks.ModelCheckpoint(
         filepath, save_weights_only=True,
         monitor='val_f1_m',

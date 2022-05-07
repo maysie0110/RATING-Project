@@ -9,9 +9,8 @@ seq_length_20/
 *.zip
 audio_classification/
 
-early_fusion_temp/
+early_fusion_chkpt/
 early_fusion_temp_2/
-audio_temp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

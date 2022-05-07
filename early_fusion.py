@@ -18,22 +18,20 @@ import glob
 # Hyperparameters
 IMG_SIZE = 224
 EPOCHS = 30
-BATCH_SIZE = 32
-
+# BATCH_SIZE = 32
 
 MAX_SEQ_LENGTH = 128
 FRAME_GAP = 11
 NUM_FEATURES = 1024
 
 
+train_image_data, train_labels = np.load("seq_length_128/extracted_data/train_data.npy"), np.load("seq_length_128/extracted_data/train_labels.npy")
+val_image_data, val_labels = np.load("seq_length_128/extracted_data/val_data.npy"), np.load("seq_length_128/extracted_data/val_labels.npy")
+test_image_data, test_labels = np.load("seq_length_128/extracted_data/test_data.npy"), np.load("seq_length_128/extracted_data/test_labels.npy")
 
-train_image_data, train_labels = np.load("extracted_data/train_data.npy"), np.load("extracted_data/train_labels.npy")
-val_image_data, val_labels = np.load("extracted_data/val_data.npy"), np.load("extracted_data/val_labels.npy")
-test_image_data, test_labels = np.load("extracted_data/test_data.npy"), np.load("extracted_data/test_labels.npy")
-
-train_spectrograms = glob.glob('extracted_train_spectrogram/*')
-val_spectrograms = glob.glob('extracted_val_spectrogram/*')
-test_spectrograms = glob.glob('extracted_test_spectrogram/*')
+train_spectrograms = glob.glob('audio_classification/extracted_train_spectrogram/*')
+val_spectrograms = glob.glob('audio_classification/extracted_val_spectrogram/*')
+test_spectrograms = glob.glob('audio_classification/extracted_test_spectrogram/*')
 
 # Embedding Layer
 class PositionalEmbedding(layers.Layer):
@@ -119,27 +117,9 @@ def get_early_fusion_model():
 
     #Create CNN model
     inputs_spec = keras.Input(shape=(IMG_SIZE,IMG_SIZE,3), name="input_spectrogram")
-    # x2 = keras.Sequential()(inputs_spec)
-    x2 = layers.Conv2D(32, (3, 3), padding='same', activation='relu', input_shape=(IMG_SIZE,IMG_SIZE,3))(inputs_spec)
-    x2 = layers.Conv2D(64, (3, 3), activation='relu')(x2)
-    x2 = layers.MaxPooling2D(pool_size=(2, 2))(x2)
-    x2 = layers.Dropout(0.25)(x2)
-    x2 = layers.Conv2D(64, (3, 3), padding='same', activation='relu')(x2)
-    x2 = layers.Conv2D(64, (3, 3), activation='relu')(x2)
-    x2 = layers.MaxPooling2D(pool_size=(2, 2))(x2)
-    x2 = layers.Dropout(0.5)(x2)
-    x2 = layers.Conv2D(128, (3, 3), padding='same', activation='relu')(x2)
-    x2 = layers.Conv2D(128, (3, 3), activation='relu')(x2)
-    x2 = layers.MaxPooling2D(pool_size=(2, 2))(x2)
-    x2 = layers.Dropout(0.5)(x2)
-    x2 = layers.Flatten()(x2)
-    x2 = layers.Dense(512, activation='relu')(x2)
-    x2 = layers.Dropout(0.5)(x2)
-
-    # #audio_temp/
-    # model_pretrained = VGG19(include_top=True)#, weights="imagenet")
-    # x2 = model_pretrained(inputs_spec)
-    # x2 = layers.Dense(4096, activation='relu', name='predictions1', dtype='float32')(x2)
+    model_pretrained = VGG19(include_top=True)#, weights="imagenet")
+    x2 = model_pretrained(inputs_spec)
+    x2 = layers.Dense(4096, activation='relu', name='predictions1', dtype='float32')(x2)
 
 
     # EARLY FUSION
@@ -158,9 +138,11 @@ def get_early_fusion_model():
     model.compile(
         optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy',f1_m,precision_m, recall_m]
     )
-    
+
     model.summary()
+
     return model
+
 
 def get_audio_data():
     train_data = []
@@ -193,12 +175,13 @@ def get_audio_data():
     return train_data, val_data, test_data
 
 def run_experiment(train_audio_data, val_audio_data, test_audio_data):
-    log_dir = "logs/fit/early_fusion_temp" 
+    log_dir = "logs/train/early_fusion_chkpt" 
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
-    filepath = os.getcwd() + "/early_fusion_temp/classifier"
+    filepath = os.getcwd() + "/early_fusion_chkpt/classifier"
     checkpoint = keras.callbacks.ModelCheckpoint(
-        filepath, save_weights_only=True, monitor='val_f1_m',
+        filepath, save_weights_only=True, 
+        monitor='val_f1_m',
         mode='max',
         save_best_only=True,
         verbose = True
