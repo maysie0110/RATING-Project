@@ -13,6 +13,8 @@ from tensorflow.keras import layers
 from tensorflow import keras
 import tensorflow as tf
 
+from utilities import f1_m, recall_m, precision_m
+
 # Hyperparameters
 IMG_SIZE = 224
 EPOCHS = 30
@@ -63,23 +65,6 @@ def get_data():
     test_data = np.array(test_data)
     print(test_data.shape)
     return train_data, val_data, test_data
-
-def recall_m(y_true, y_pred):
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    recall = true_positives / (possible_positives + K.epsilon())
-    return recall
-
-def precision_m(y_true, y_pred):
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-    precision = true_positives / (predicted_positives + K.epsilon())
-    return precision
-
-def f1_m(y_true, y_pred):
-    precision = precision_m(y_true, y_pred)
-    recall = recall_m(y_true, y_pred)
-    return 2*((precision*recall)/(precision+recall+K.epsilon()))
 
 
 def get_cnn_model():

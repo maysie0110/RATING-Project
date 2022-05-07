@@ -24,7 +24,7 @@ The following dependencies need to be satisfied to run the scripts:
 
 ### Training
 - Run "python transformer_train.py" using the extracted features data and label. 
-- Weights for trained model is saved in "seq_length_128/video_chkpt_128/video_classifier"
+- Weights for trained model is saved in "seq_length_128/video_chkpt_2/video_classifier"
 
 ## CNN model for video classification using audio information
 ### Audio Extraction
@@ -51,7 +51,7 @@ pip install librosa
 ## Multimodal Fusion
 1. Early Fusion
 - To train, 'python early_fusion.py'
-- Weights for the trained model is saved in ""
+- Weights for the trained model is saved in "early_fusion_temp_2/"
 
 2. Late Fusion
 - Run 'python late_fusion.py'

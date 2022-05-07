@@ -13,10 +13,11 @@ import numpy as np
 import glob
 import cv2
 import os
-from utilities import f1_m, recall_m, precision_m
+
 from audio_classification import get_cnn_model
 from transformer_train import get_compiled_model
 from early_fusion import get_early_fusion_model
+from late_fusion import Accuracy, predictLabelForGivenThreshold
 ## global variables
 
 train_dir = os.getcwd() + "/train_data/"
@@ -129,7 +130,7 @@ def main():
     #############################################################################################
     print("Early Fusion")
     # filepath = os.getcwd() + "/early_fusion_chkpt/classifier"
-    filepath = os.getcwd() + "/chkpt/early_fusion_temp_2/classifier"
+    filepath = os.getcwd() + "/early_fusion_temp_2/classifier"
     early_fusion = get_early_fusion_model()
     early_fusion.load_weights(filepath)
 
@@ -139,6 +140,15 @@ def main():
     print(f"F1 score: {round(f1_score, 2)}")
     print(f"Precision: {round(precision, 2)}")
     print(f"Recall: {round(recall, 2)}")
+
+    label_names = ['Mature', 'Slapstick', 'Gory', 'Sarcasm']
+    y_pred = early_fusion.predict([test_image_data, test_audio_data])
+    y_pred = y_pred.round()
+
+    # y_pred = (y_pred > 0.5).astype(int)
+    print(classification_report(test_labels, y_pred,target_names=label_names))
+    # print(accuracy_score(test_labels, y_pred))
+    # print(Accuracy(test_labels, y_pred))
 
 if __name__ == '__main__':
     main()

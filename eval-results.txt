@@ -35,7 +35,6 @@ F1 score: 0.43
 Precision: 0.34
 Recall: 0.65
 
-
 CNN model (vgg19, adam):
 Test accuracy: 35.51%
 F1 score: 0.36
@@ -49,18 +48,6 @@ Precision: 0.4
 Recall: 0.58
 
 #########################################
-Early fusion (early_fusion_temp):
-Test accuracy: 51.4%
-F1 score: 0.58
-Precision: 0.57
-Recall: 0.61
-
-Early fusion (early_fusion_chkpt):
-Test accuracy: 61.68%
-F1 score: 0.58
-Precision: 0.58
-Recall: 0.58
-
 Early fusion (early_fusion_temp_2 using vgg19):
 Test accuracy: 60.75%
 F1 score: 0.63
@@ -68,20 +55,20 @@ Precision: 0.59
 Recall: 0.69
 
 #########################################
-Late fusion (tmp_3_4 + temp, threshold=0.5):
-Test accuracy: 32.87%
-F1 score: 0.46
-Precision: 0.45
-Recall: 0.60
+Late fusion (threshold =0.2)
+Test accuracy: 21.26%
+F1 score: 0.43
+Precision: 0.29
+Recall: 1.0
 
-Late fusion (video_chkpt + audio_chkpt, threshold=0.7):
-Test accuracy: 34.11%
-F1 score: 0.51
-Precision: 0.42
-Recall: 0.76
+Late fusion (threshold =0.5)
+Test accuracy: 34.42%
+F1 score: 0.49
+Precision: 0.34
+Recall: 0.92
 
-Late fusion (video_chkpt + audio_temp, threshold =0.5)
-Test accuracy: 38.01%
-F1 score: 0.50
-Precision: 0.38
-Recall: 0.80
+Late fusion (threshold =0.7)
+Test accuracy: 46.18%
+F1 score: 0.56
+Precision: 0.48
+Recall: 0.82
